@@ -36,12 +36,33 @@ public class KafkaSimpleConsumer {
         //配置5  如果两次poll的时间如果超出30s的时间间隔，kafka会认为消费能力弱，将其剔除消费者组，出发rabalance机制，把分区分配给其他消费者
         properties.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG,30*1000);
 
+        //配置6 consumer向broker发送心跳的时间
+        properties.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG,1000);
+        //kafka如果超过10s没有收到消费者的心跳，就会把消费者剔除消费者组 进行rabalace，把分区分配给其他消费者
+        properties.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG,10*1000);
+
+        //配置7  新消费者组中的消费者启动后，默认会从当前分区最后一条消息offset+1处开始消费，可以通过设置让新的消费者
+         //       第一次从头消费，之后从最后消费位置的offset+1处消费
+        // earliest 第一次从头开始消费，之后开始消费新消息
+        //latest 默认消费新消息
+        properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,"earliest");
+
+
 
         //创建一个消费者客户端
         KafkaConsumer<String, String> kafkaConsumer = new KafkaConsumer<>(properties);
 
-        //消费者订阅主题列表
-        kafkaConsumer.subscribe(Arrays.asList(TOPIC_NAME));
+        //消费模式1  消费者者订阅主题未指定分区消费
+        //kafkaConsumer.subscribe(Arrays.asList(TOPIC_NAME));
+        //消费模式2  消费者订阅主题指定分区消费
+        //kafkaConsumer.assign(Arrays.asList(new TopicPartition(TOPIC_NAME,0)));
+        //消费模式3  指定主题分区从头消费
+        //kafkaConsumer.assign(Arrays.asList(new TopicPartition(TOPIC_NAME,0)));
+        //kafkaConsumer.seekToBeginning(Arrays.asList(new TopicPartition(TOPIC_NAME,0));
+        //消费模式4 指定主题分区特定偏移量1处开始消费
+        kafkaConsumer.assign(Arrays.asList(new TopicPartition(TOPIC_NAME,0)));
+        kafkaConsumer.seek(new TopicPartition(TOPIC_NAME,0),1);
+
 
         while(true){
            /* poll是拉取消费的长轮询*/
